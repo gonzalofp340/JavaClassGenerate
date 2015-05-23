@@ -1,0 +1,28 @@
+#!/usr/bin/php
+<?php
+	$params = $argv;
+	$countParams = count($argv);
+	
+	if($countParams == 2){
+		$file = $params[1];
+		
+		if(file_exists($file)){
+			$content = file($file);
+			
+			foreach($content as $c){
+				$c = trim($c);
+				
+				$v = explode("(", $c);
+				$classname = trim($v[0]);
+				$attrs = substr(trim($v[1]), 0, strlen(trim($v[1]))-1);
+				
+				system('./javaClassGenerate_2 '.$classname.' "'.$attrs.'"');
+			}
+		}else{
+			echo "File not found.\n";
+		}
+		
+	}else{
+		echo "Error\n";
+	}
+?>

@@ -1,0 +1,177 @@
+#!/usr/bin/php
+<?php
+	/* Clase para trabajar con php en linea de comando. */
+	class Console{
+
+			private $_stdin= null;
+
+			/* Lee la entrada del usuario en la consola */
+			function readInput($str){
+					print $str;
+					$stdin= fopen("php://stdin", "r");
+					$entrada= fgets($stdin);
+					$this->_stdin= trim($entrada);
+			}
+
+			/* Retorna el texto de la entrada del usuario en la consola */
+			function printInput(){
+					return $this->_stdin;
+			}
+
+			function write($str){
+					print trim($str)."\n";
+			}
+	}
+	/******************************************************/
+
+	$console= new Console();
+	
+	$params = $argv;
+	$countParams = count($argv);
+	
+	if($countParams !== 3){
+		$console->write("Error de parametros");
+		exit();
+	}
+
+	$classname = $params[1];
+	$attrs = $params[2];
+	
+	$content_source = "public class $classname {\r\n";
+	$vAttrs = explode(",", $attrs);
+	$objects = array();
+	$error= false;
+	
+	/* Armo las variables privadas. */
+	foreach($vAttrs as $attr){
+		$attr= trim($attr);
+		$v = explode(' ', $attr);
+		
+		if(count($v) == 2){
+			$dataType = $v[0];
+			$dataName = $v[1];
+			
+			switch(strtolower($dataType)){
+				case "int":
+					$content_source .= "\tprivate int ".$dataName.";\r\n";
+					break;
+				case "string":
+					$content_source .= "\tprivate String ".$dataName.";\r\n";
+					break;
+				case "boolean":
+					$content_source .= "\tprivate boolean ".$dataName.";\r\n";
+					break;
+				default:
+					$content_source .= "\tprivate $dataType ".$dataName.";\r\n";
+					$objects[$dataName]= $dataType;
+					break;
+			}
+		}else{
+			$console->write("Error.");
+			$error= true;
+			break;
+		}
+	}
+	/* Fin de variables privadas */
+	
+	if($error){
+		exit();
+	}
+	
+	/* Armo constructor */
+	$content_source .= "\r\n\tpublic $classname() {\r\n";
+	$content_source .= "\t\t";
+	$content_source .= "/* Constructor de la clase $classname. */\r\n";
+	$content_source .= "\t";
+	
+	foreach($objects as $obj_name => $obj_type){
+		$content_source .= "\tthis.$obj_name= new $obj_type();\n";
+		$content_source .= "\t";
+	}
+
+	$content_source .= "}\r\n\r\n";
+	/* Fin de constructor */
+
+	/* Armo los sets */
+	foreach($vAttrs as $attr){
+		$attr= trim($attr);
+		$v = explode(' ', $attr);
+
+		$dataType = $v[0];
+		$dataName = $v[1];
+		
+		switch(strtolower($dataType)){
+			case "int":
+				$content_source .= "\tpublic void set".ucfirst(strtolower($dataName))."(int ".strtolower($dataName)."){\r\n";
+				$content_source .= "\t\tthis.$dataName= ".strtolower($dataName).";\r\n";
+				$content_source .= "\t}\r\n";
+				break;
+			case "string":
+				$content_source .= "\tpublic void set".ucfirst(strtolower($dataName))."(String ".strtolower($dataName)."){\r\n";
+				$content_source .= "\t\tthis.$dataName= ".strtolower($dataName).";\r\n";
+				$content_source .= "\t}\r\n";
+				break;
+			case "boolean":
+				$content_source .= "\tpublic void set".ucfirst(strtolower($dataName))."(boolean ".strtolower($dataName)."){\r\n";
+				$content_source .= "\t\tthis.$dataName= ".strtolower($dataName).";\r\n";
+				$content_source .= "\t}\r\n";
+				break;
+			default:
+				$content_source .= "\tpublic void set".ucfirst(strtolower($dataName))."($dataType ".strtolower($dataName)."){\r\n";
+				$content_source .= "\t\tthis.$dataName= ".strtolower($dataName).";\r\n";
+				$content_source .= "\t}\r\n";
+				break;			
+		}
+		
+	}
+	/* Fin de los sets */
+	
+	$content_source .= "\r\n";
+	
+	/* Armo los gets */
+	foreach($vAttrs as $attr){
+		$attr= trim($attr);
+		$v = explode(' ', $attr);
+
+		$dataType = $v[0];
+		$dataName = $v[1];
+		
+		switch(strtolower($dataType)){
+			case "int":
+				$content_source .= "\tpublic int get".ucfirst(strtolower($dataName))."(){\r\n";
+				$content_source .= "\t\treturn this.$dataName;\r\n";
+				$content_source .= "\t}\r\n";
+				break;
+			case "string":
+				$content_source .= "\tpublic String get".ucfirst(strtolower($dataName))."(){\r\n";
+				$content_source .= "\t\treturn this.$dataName;\r\n";
+				$content_source .= "\t}\r\n";
+				break;
+			case "boolean":
+				$content_source .= "\tpublic boolean get".ucfirst(strtolower($dataName))."(){\r\n";
+				$content_source .= "\t\treturn this.$dataName;\r\n";
+				$content_source .= "\t}\r\n";
+				break;
+			default:
+				$content_source .= "\tpublic $dataType get".ucfirst(strtolower($dataName))."(){\r\n";
+				$content_source .= "\t\treturn this.$dataName;\r\n";
+				$content_source .= "\t}\r\n";
+				break;			
+		}
+		
+	}
+	/* Fin de los gets */
+	
+	
+
+	$content_source .= "\r\n}";
+	
+	$path= "./Projects/";
+	$f= @fopen($path.$classname.".java", "w+");
+	if(@fwrite($f, $content_source)){
+		$console->write("class $classname generated.");
+	}else{
+		$console->write("Generated error.");
+	}
+	@fclose($f);
+?>
