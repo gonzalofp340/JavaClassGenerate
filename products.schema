@@ -1,0 +1,2 @@
+Products(int id, string name, string description, int type_id, boolean active)
+Types(int id, string name)
